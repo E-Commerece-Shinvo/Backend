@@ -7,6 +7,41 @@ import Review from './models/Review.js';
 
 dotenv.config();
 
+const IMAGE_POOL = [
+    'https://images.unsplash.com/photo-1609179242023-5e9bc7ca199a?q=80&w=600',
+    'https://images.unsplash.com/photo-1619932024765-b1a77eff925c?q=80&w=600',
+    'https://images.unsplash.com/photo-1619130771141-89779dfb106d?q=80&w=600',
+    'https://images.unsplash.com/photo-1603539947678-cd3954ed515d?q=80&w=600',
+    'https://images.unsplash.com/photo-1585060544812-6b45742d762f?q=80&w=600',
+    'https://images.unsplash.com/photo-1546868889-1883a755d5bb?q=80&w=600',
+    'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?q=80&w=600',
+    'https://images.unsplash.com/photo-1544117519-31a4b719223d?q=80&w=600',
+    'https://images.unsplash.com/photo-1586105449897-22d212fc1117?q=80&w=600',
+    'https://images.unsplash.com/photo-1603313011101-3144fe63777c?q=80&w=600',
+    'https://images.unsplash.com/photo-1601784551446-20c9e07cdbea?q=80&w=600',
+    'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=600',
+    'https://images.unsplash.com/photo-1572635196237-14b3f281503f?q=80&w=600',
+    'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?q=80&w=600',
+    'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=600',
+    'https://images.unsplash.com/photo-1546435770-a3e426bf472b?q=80&w=600',
+    'https://images.unsplash.com/photo-1491933382434-500287f9b54b?q=80&w=600',
+    'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?q=80&w=600',
+    'https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?q=80&w=600',
+    'https://images.unsplash.com/photo-1504274066654-fa991435009c?q=80&w=600',
+    'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?q=80&w=600',
+    'https://images.unsplash.com/photo-1589492477829-5e65395b66cc?q=80&w=600',
+    'https://images.unsplash.com/photo-1556656793-062ff9878233?q=80&w=600',
+    'https://images.unsplash.com/photo-1524333865917-7440361284a1?q=80&w=600',
+    'https://images.unsplash.com/photo-1563203369-26f2e4a5ccf7?q=80&w=600',
+    'https://images.unsplash.com/photo-1542393545-10f5cde2c810?q=80&w=600',
+    'https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?q=80&w=600',
+    'https://images.unsplash.com/photo-1512499617640-c74ae3a79d37?q=80&w=600',
+    'https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=600',
+    'https://images.unsplash.com/photo-1496171367470-9ed9a91ea931?q=80&w=600'
+];
+
+const BRANDS = ['Anker', 'Baseus', 'Apple', 'Samsung', 'Xiaomi', 'Google', 'Soundcore', 'Ugreen', 'Haylou', 'Vivo'];
+
 const seedDatabase = async () => {
     try {
         await mongoose.connect(process.env.MONGO_URI);
@@ -19,346 +54,107 @@ const seedDatabase = async () => {
         await Review.deleteMany({});
         console.log('🗑️  Cleared existing data');
 
-        // ─── Seed Users ─────────────────────────────────
-        const users = await User.create([
-            {
-                username: 'user',
-                email: 'user@shinvo.com',
-                password: 'password',
-                role: 'user'
-            },
-            {
-                username: 'admin',
-                email: 'admin@shinvo.com',
-                password: 'admin123',
-                role: 'admin'
-            }
+        // --- Seed Users ---
+        await User.create([
+            { username: 'user', email: 'user@shinvo.com', password: 'password', role: 'user' },
+            { username: 'admin', email: 'admin@shinvo.com', password: 'admin123', role: 'admin' }
         ]);
         console.log('👤 Users seeded');
 
-        // ─── Seed Categories ────────────────────────────
-        const categories = await Category.create([
-            { name: 'Smart Watch', image: 'https://placehold.co/400x400/1c1c1c/FFFFFF?text=Smart+Watch' },
-            { name: 'Power Bank', image: 'https://placehold.co/400x400/1c1c1c/FFFFFF?text=Power+Bank' },
-            { name: 'Charger', image: 'https://placehold.co/400x400/1c1c1c/FFFFFF?text=Charger' },
-            { name: 'Earbuds', image: 'https://placehold.co/400x400/1c1c1c/FFFFFF?text=Earbuds' },
-            { name: 'Phone Case', image: 'https://placehold.co/400x400/1c1c1c/FFFFFF?text=Phone+Case' },
-            { name: 'Mobile Holder', image: 'https://placehold.co/400x400/1c1c1c/FFFFFF?text=Mobile+Holder' },
-        ]);
+        // --- Seed Hierarchical Categories ---
+        const niches = [
+            'Charger & Adapter',
+            'Protection',
+            'Audio & Wearables',
+            'Accessories',
+            'Shop By Brands'
+        ];
 
-        // Create a lookup map for categories
-        const catMap = {};
-        categories.forEach(c => { catMap[c.name] = c._id; });
-        console.log('📂 Categories seeded');
+        // 1. Create Level 0 (Niches)
+        const nichesDocs = await Promise.all(niches.map(name => Category.create({ name, level: 0 })));
+        console.log('📂 Level 0: Niches Created');
 
-        // ─── Seed Products ──────────────────────────────
-        const products = await Product.create([
-            // Chargers
-            {
-                title: 'Samsung 45W Travel Adapter (Super Fast Charging 2.0)',
-                brand: 'Samsung',
-                description: 'Unlock the full potential of your device with the Samsung 45W Travel Adapter. Designed specifically for the Galaxy S-Series, this adapter takes your battery from 0% to 65% in just 30 minutes.',
-                price: 6500,
-                category: catMap['Charger'],
-                images: [
-                    'https://placehold.co/600x600/f0f0f0/333333?text=Samsung+45W+1',
-                    'https://placehold.co/600x600/f0f0f0/333333?text=Samsung+45W+2',
-                    'https://placehold.co/600x600/f0f0f0/333333?text=Samsung+45W+3',
-                    'https://placehold.co/600x600/f0f0f0/333333?text=Samsung+45W+4',
-                    'https://placehold.co/600x600/f0f0f0/333333?text=Samsung+45W+5',
-                ],
-                colors: ['Black', 'White'],
-                powerOptions: ['25W', '45W', '65W'],
-                features: [
-                    'Support fast protocols (PD, QC)',
-                    'Super Fast Charging 2.0 (45W)',
-                    'Supports PD (Power Delivery) & QC Protocols',
-                    'USB-C Interface',
-                    'Official Samsung Product'
-                ],
-                specifications: {
-                    Brand: 'Samsung',
-                    Model: 'EP-T4510',
-                    'Max Output': '45 Watts',
-                    Interface: 'USB Type-C',
-                    'Input Voltage': '100-240V (Global Support)',
-                    'Charging Standards': 'PD 3.0 (PPS), Quick Charge 2.0',
-                    Color: 'Black / White',
-                    'In the Box': '45W Adapter + 5A C-to-C Cable (1m)'
-                },
-                stock: 50,
-                rating: 4.8,
-                numReviews: 120,
-                isBestseller: true,
-                isNewArrival: false
-            },
-            {
-                title: 'UGREEN Nexode 45W Charger',
-                brand: 'UGREEN',
-                description: 'Compact GaN charger with 45W output. USB-C port with PD 3.0 support for fast charging any device.',
-                price: 4500,
-                category: catMap['Charger'],
-                images: [
-                    'https://placehold.co/600x600/f0f0f0/333333?text=UGREEN+45W+1',
-                    'https://placehold.co/600x600/f0f0f0/333333?text=UGREEN+45W+2',
-                ],
-                colors: ['Black', 'Gray'],
-                powerOptions: ['45W'],
-                features: [
-                    'GaN Technology',
-                    '45W PD 3.0 Output',
-                    'Compact & Lightweight',
-                    'Universal Compatibility'
-                ],
-                stock: 80,
-                rating: 4.6,
-                numReviews: 85,
-                isBestseller: true,
-                isNewArrival: false
-            },
+        // 2. Create Level 1 categories (3 per niche)
+        const categoriesMapping = {
+            'Charger & Adapter': ['Wall Chargers', 'Power Banks', 'Data Cables'],
+            'Protection': ['Mobile Covers', 'Screen Protectors', 'Lens Protectors'],
+            'Audio & Wearables': ['True Wireless Earbuds', 'Smart Watches', 'Bluetooth Speakers'],
+            'Accessories': ['Mobile Holders', 'Car Mounts', 'Selfie Sticks'],
+            'Shop By Brands': ['Premium Picks', 'Budget Options', 'New Arrivals']
+        };
 
-            // Phone Cases
-            {
-                title: 'Google Pixel Transparent Magsafe Case',
-                brand: 'Google',
-                description: 'Premium transparent case with MagSafe compatibility for Google Pixel. Crystal clear design showcases your phone.',
-                price: 2500,
-                category: catMap['Phone Case'],
-                images: [
-                    'https://placehold.co/600x600/f0f0f0/333333?text=Pixel+Case+1',
-                    'https://placehold.co/600x600/f0f0f0/333333?text=Pixel+Case+2',
-                ],
-                colors: ['Clear', 'Clear Black'],
-                features: [
-                    'MagSafe Compatible',
-                    'Crystal Clear Design',
-                    'Scratch Resistant',
-                    'Slim Profile'
-                ],
-                stock: 100,
-                rating: 4.5,
-                numReviews: 60,
-                isBestseller: true,
-                isNewArrival: false
-            },
-            {
-                title: 'Samsung Galaxy S24 Ultra Case',
-                brand: 'Samsung',
-                description: 'Official Samsung clear case for Galaxy S24 Ultra with enhanced grip and slim design.',
-                price: 2000,
-                category: catMap['Phone Case'],
-                images: [
-                    'https://placehold.co/400x400/202020/FFFFFF?text=S24+Case+Black',
-                    'https://placehold.co/400x400/DC2626/FFFFFF?text=S24+Case+Red',
-                ],
-                colors: ['Black', 'Red'],
-                features: [
-                    'Official Samsung Product',
-                    'Enhanced Grip',
-                    'Slim Design',
-                    'Anti-Yellowing'
-                ],
-                stock: 150,
-                rating: 4.3,
-                numReviews: 45,
-                isBestseller: false,
-                isNewArrival: true
-            },
-            {
-                title: 'iPhone 16 Pro Max Silicone Case',
-                brand: 'Apple',
-                description: 'Soft-touch silicone case with MagSafe for iPhone 16 Pro Max. Available in multiple vibrant colors.',
-                price: 3000,
-                category: catMap['Phone Case'],
-                images: [
-                    'https://placehold.co/400x400/202020/FFFFFF?text=iPhone+Case+Black',
-                    'https://placehold.co/400x400/DC2626/FFFFFF?text=iPhone+Case+Red',
-                ],
-                colors: ['Black', 'Red', 'Blue', 'White'],
-                features: [
-                    'MagSafe Compatible',
-                    'Soft Touch Silicone',
-                    'Microfiber Lining',
-                    'Wireless Charging Support'
-                ],
-                stock: 200,
-                rating: 4.7,
-                numReviews: 95,
-                isBestseller: false,
-                isNewArrival: true
-            },
-            {
-                title: 'Xiaomi Redmi Note 13 Pro Case',
-                brand: 'Xiaomi',
-                description: 'Shockproof protective case for Xiaomi Redmi Note 13 Pro with carbon fiber texture.',
-                price: 1200,
-                category: catMap['Phone Case'],
-                images: [
-                    'https://placehold.co/400x400/202020/FFFFFF?text=Xiaomi+Case',
-                ],
-                colors: ['Black'],
-                features: [
-                    'Carbon Fiber Texture',
-                    'Shockproof Protection',
-                    'Raised Camera Ring',
-                    'Anti-Slip Design'
-                ],
-                stock: 120,
-                rating: 4.2,
-                numReviews: 30,
-                isBestseller: false,
-                isNewArrival: true
-            },
-            {
-                title: 'Vivo V30 Pro Premium Case',
-                brand: 'Vivo',
-                description: 'Elegantly designed premium case for Vivo V30 Pro with metal frame reinforcement.',
-                price: 1500,
-                category: catMap['Phone Case'],
-                images: [
-                    'https://placehold.co/400x400/202020/FFFFFF?text=Vivo+Case',
-                ],
-                colors: ['Black', 'Blue'],
-                features: [
-                    'Metal Frame Reinforcement',
-                    'Premium Build Quality',
-                    'Raised Bezel Protection',
-                ],
-                stock: 90,
-                rating: 4.1,
-                numReviews: 22,
-                isBestseller: false,
-                isNewArrival: true
-            },
-
-            // Mobile Holder
-            {
-                title: 'Suction Magnetic Mobile Holder',
-                brand: 'Baseus',
-                description: 'Strong suction cup mount with magnetic attachment. Perfect for car dashboard or windshield use.',
-                price: 1800,
-                category: catMap['Mobile Holder'],
-                images: [
-                    'https://placehold.co/600x600/f0f0f0/333333?text=Mobile+Holder+1',
-                    'https://placehold.co/600x600/f0f0f0/333333?text=Mobile+Holder+2',
-                ],
-                colors: ['Black'],
-                features: [
-                    'Strong Suction Cup',
-                    'Magnetic Attachment',
-                    '360° Rotation',
-                    'Universal Compatibility'
-                ],
-                stock: 70,
-                rating: 4.4,
-                numReviews: 55,
-                isBestseller: true,
-                isNewArrival: false
-            },
-
-            // Power Banks
-            {
-                title: 'Baseus Bipow 22.5W 20000mAh Power Bank',
-                brand: 'Baseus',
-                description: 'High-capacity 20000mAh power bank with 22.5W fast charging. Dual USB-A and USB-C output ports.',
-                price: 5500,
-                originalPrice: 7000,
-                category: catMap['Power Bank'],
-                images: [
-                    'https://placehold.co/600x600/c6c7c8/333333?text=Baseus+PB+1',
-                    'https://placehold.co/600x600/c6c7c8/333333?text=Baseus+PB+2',
-                ],
-                colors: ['Black', 'White'],
-                features: [
-                    '22.5W Fast Charging',
-                    '20000mAh Capacity',
-                    'Dual Output Ports',
-                    'LED Display',
-                    'Airline Safe'
-                ],
-                stock: 60,
-                rating: 4.5,
-                numReviews: 78,
-                isBestseller: false,
-                isNewArrival: true
-            },
-
-            // Smart Watch
-            {
-                title: 'Smart Band Pro Fitness Tracker',
-                brand: 'Xiaomi',
-                description: 'Advanced fitness tracker with heart rate monitoring, sleep tracking, and 14-day battery life.',
-                price: 8500,
-                category: catMap['Smart Watch'],
-                images: [
-                    'https://placehold.co/600x600/c6c7c8/333333?text=Smart+Band+1',
-                    'https://placehold.co/600x600/c6c7c8/333333?text=Smart+Band+2',
-                ],
-                colors: ['Black', 'Blue', 'Pink'],
-                features: [
-                    'Heart Rate Monitor',
-                    'Sleep Tracking',
-                    '14-Day Battery Life',
-                    'Water Resistant IP68',
-                    'AMOLED Display'
-                ],
-                stock: 45,
-                rating: 4.6,
-                numReviews: 110,
-                isBestseller: false,
-                isNewArrival: true
-            },
-
-            // Earbuds
-            {
-                title: 'Samsung Galaxy Buds3 Pro',
-                brand: 'Samsung',
-                description: 'Premium wireless earbuds with active noise cancellation, 360 Audio, and 30-hour total battery life.',
-                price: 12000,
-                category: catMap['Earbuds'],
-                images: [
-                    'https://placehold.co/600x600/f0f0f0/333333?text=Galaxy+Buds+1',
-                    'https://placehold.co/600x600/f0f0f0/333333?text=Galaxy+Buds+2',
-                ],
-                colors: ['Black', 'White', 'Purple'],
-                features: [
-                    'Active Noise Cancellation',
-                    '360 Audio',
-                    '30-Hour Battery Life',
-                    'IP57 Water Resistant',
-                    'Hi-Fi Audio Quality'
-                ],
-                stock: 35,
-                rating: 4.7,
-                numReviews: 92,
-                isBestseller: false,
-                isNewArrival: true
-            },
-        ]);
-        console.log(`📦 ${products.length} Products seeded`);
-
-        // ─── Seed Reviews for Samsung 45W Adapter ───────
-        const samsungAdapter = products[0];
-        const demoUser = users[0];
-
-        await Review.create([
-            {
-                user: demoUser._id,
-                product: samsungAdapter._id,
-                rating: 5,
-                title: 'Absolutely love this product!',
-                text: 'The charger is incredibly fast. My S24 Ultra charges from 0 to 65% in 30 minutes. Totally worth every penny.',
-                images: []
+        const l1Docs = [];
+        for (const niche of nichesDocs) {
+            const names = categoriesMapping[niche.name] || [];
+            for (const name of names) {
+                const doc = await Category.create({ 
+                    name, 
+                    level: 1, 
+                    parentCategory: niche._id,
+                    image: IMAGE_POOL[Math.floor(Math.random() * IMAGE_POOL.length)]
+                });
+                l1Docs.push(doc);
             }
-        ]);
-        console.log('⭐ Reviews seeded');
+        }
+        console.log('📂 Level 1: Categories Created');
 
-        console.log('\n✅ Database seeded successfully!');
-        console.log('──────────────────────────────────');
-        console.log('Demo User:  user@shinvo.com / password');
-        console.log('Admin User: admin@shinvo.com / admin123');
-        console.log('──────────────────────────────────');
+        // 3. Create Level 2 sub-categories (3 per Level 1 category)
+        const subSubNames = ['SAMSUNG Edition', 'VIVO Edition', 'XIAOMI Edition', 'Premium Edition', 'Ultimate Series', 'Performance Pro', 'Slim Series', 'Rugged Armor', 'Crystal Clear'];
+        
+        const l2Docs = [];
+        for (const cat of l1Docs) {
+            for (let i = 0; i < 3; i++) {
+                const name = `${cat.name} ${subSubNames[i] || 'Global Series'}`;
+                const doc = await Category.create({
+                    name,
+                    level: 2,
+                    parentCategory: cat._id,
+                    image: IMAGE_POOL[Math.floor(Math.random() * IMAGE_POOL.length)]
+                });
+                l2Docs.push(doc);
+            }
+        }
+        console.log(`📂 Level 2: ${l2Docs.length} Sub-Categories Created`);
 
+        // --- Seed Products (10 per Level 2 Category) ---
+        const productBundles = [];
+        for (const l2 of l2Docs) {
+            for (let i = 1; i <= 10; i++) {
+                const brand = BRANDS[Math.floor(Math.random() * BRANDS.length)];
+                const price = Math.floor(Math.random() * 20000) + 1200;
+                productBundles.push({
+                    title: `${brand} ${l2.name} - Version ${i}`,
+                    brand,
+                    description: `Experience professional performance with our newest ${l2.name}. This ${brand} product features cutting-edge technology, premium build quality, and extreme durability. Perfect for daily use and professional environments.`,
+                    price,
+                    image: IMAGE_POOL[Math.floor(Math.random() * IMAGE_POOL.length)],
+                    images: [
+                        IMAGE_POOL[Math.floor(Math.random() * IMAGE_POOL.length)],
+                        IMAGE_POOL[Math.floor(Math.random() * IMAGE_POOL.length)]
+                    ],
+                    category: l2._id,
+                    stock: Math.floor(Math.random() * 100) + 10,
+                    rating: (Math.random() * 1.5 + 3.5).toFixed(1),
+                    numReviews: Math.floor(Math.random() * 200),
+                    isBestseller: Math.random() > 0.8,
+                    isNewArrival: Math.random() > 0.7,
+                    colors: ['Black', 'White', 'Silver', 'Carbon'],
+                    features: ['Ultra Durable', 'Fast Response', 'Ergonomic Design', '2-Year Warranty'],
+                    specifications: {
+                        Brand: brand,
+                        Series: 'Professional',
+                        Material: 'Hardened Polymer & Metal',
+                        Compatibility: 'Universal Support',
+                        Connectivity: 'Bluetooth 5.3 / USB-C'
+                    }
+                });
+            }
+        }
+
+        const seededProducts = await Product.create(productBundles);
+        console.log(`📦 ${seededProducts.length} Products seeded successfully!`);
+
+        console.log('\n✅ Massive Seed Complete!');
         process.exit(0);
     } catch (error) {
         console.error('❌ Seeding Error:', error.message);
