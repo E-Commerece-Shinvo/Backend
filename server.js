@@ -2,6 +2,11 @@ import express from 'express';
 import cors from 'cors';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Route imports.  git 
 import authRoutes from './routes/authRoutes.js';
@@ -31,17 +36,21 @@ app.use('/api/reviews', reviewRoutes);
 app.use('/api/upload', uploadRoutes);
 
 // ─── Health Check ───────────────────────────────────────
-app.get('/', (req, res) => {
+app.get('/api/health', (req, res) => {
     res.json({
         message: '🚀 Shinvo E-Commerce API is running',
-        endpoints: {
-            auth: '/api/auth',
-            products: '/api/products',
-            categories: '/api/categories',
-            orders: '/api/orders',
-            reviews: '/api/reviews'
-        }
     });
+});
+
+// ─── Static Files & SPA Routing ─────────────────────────
+const distPath = path.join(__dirname, '../Frontend/dist');
+app.use(express.static(distPath));
+
+// ─── SPA Routing ────────────────────────────────────────
+// Catch-all: Serve index.html for all other routes so React Router can handle them.
+// We use app.use() to avoid Express 5's path-to-regexp wildcard issues.
+app.use((req, res) => {
+    res.sendFile(path.join(distPath, 'index.html'));
 });
 
 // ─── 404 Handler ────────────────────────────────────────
