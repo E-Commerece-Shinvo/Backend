@@ -42,7 +42,12 @@ const orderSchema = new mongoose.Schema({
         type: String,
         enum: ['cod', 'card', 'bank_transfer'],
         default: 'cod'
-    }
+    },
+    history: [{
+        status: { type: String, required: true },
+        message: { type: String },
+        timestamp: { type: Date, default: Date.now }
+    }]
 }, { timestamps: true });
 
 const Order = mongoose.model('Order', orderSchema);
