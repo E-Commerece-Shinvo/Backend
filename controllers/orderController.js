@@ -15,7 +15,11 @@ export const createOrder = async (req, res) => {
             items,
             totalAmount,
             shippingAddress,
-            paymentMethod
+            paymentMethod,
+            history: [{
+                status: 'pending',
+                message: 'Order was successfully placed by the customer.'
+            }]
         });
 
         res.status(201).json(order);
@@ -81,7 +85,20 @@ export const updateOrderStatus = async (req, res) => {
             return res.status(404).json({ message: 'Order not found' });
         }
 
+        const statusMessages = {
+            'pending': 'Order is pending.',
+            'processing': 'Admin has started processing the order.',
+            'shipped': 'Order has been shipped and is on its way.',
+            'delivered': 'Order has been successfully delivered.',
+            'cancelled': 'Order has been cancelled.'
+        };
+
         order.status = status;
+        order.history.push({
+            status: status,
+            message: statusMessages[status] || `Status updated to ${status}`
+        });
+
         await order.save();
 
         res.json(order);
