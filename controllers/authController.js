@@ -25,6 +25,11 @@ export const register = async (req, res) => {
             username: user.username,
             email: user.email,
             role: user.role,
+            phone: user.phone,
+            gender: user.gender,
+            permanentAddress: user.permanentAddress,
+            profileImage: user.profileImage,
+            addresses: user.addresses,
             token: generateToken(user._id)
         });
     } catch (error) {
@@ -62,6 +67,11 @@ export const login = async (req, res) => {
             username: user.username,
             email: user.email,
             role: user.role,
+            phone: user.phone,
+            gender: user.gender,
+            permanentAddress: user.permanentAddress,
+            profileImage: user.profileImage,
+            addresses: user.addresses,
             token: generateToken(user._id)
         });
     } catch (error) {
@@ -79,7 +89,50 @@ export const getProfile = async (req, res) => {
             username: user.username,
             email: user.email,
             role: user.role,
+            phone: user.phone,
+            gender: user.gender,
+            permanentAddress: user.permanentAddress,
+            profileImage: user.profileImage,
+            addresses: user.addresses,
             createdAt: user.createdAt
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Update current user profile
+// @route   PUT /api/auth/profile
+export const updateProfile = async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Update fields if provided in request body
+        if (req.body.username !== undefined) user.username = req.body.username;
+        if (req.body.email !== undefined) user.email = req.body.email;
+        if (req.body.phone !== undefined) user.phone = req.body.phone;
+        if (req.body.gender !== undefined) user.gender = req.body.gender;
+        if (req.body.permanentAddress !== undefined) user.permanentAddress = req.body.permanentAddress;
+        if (req.body.profileImage !== undefined) user.profileImage = req.body.profileImage;
+        if (req.body.addresses !== undefined) user.addresses = req.body.addresses;
+
+        const updatedUser = await user.save();
+
+        res.json({
+            _id: updatedUser._id,
+            username: updatedUser.username,
+            email: updatedUser.email,
+            role: updatedUser.role,
+            phone: updatedUser.phone,
+            gender: updatedUser.gender,
+            permanentAddress: updatedUser.permanentAddress,
+            profileImage: updatedUser.profileImage,
+            addresses: updatedUser.addresses,
+            createdAt: updatedUser.createdAt
         });
     } catch (error) {
         res.status(500).json({ message: error.message });

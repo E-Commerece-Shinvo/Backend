@@ -32,6 +32,22 @@ const userSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    profileImage: {
+        type: String,
+        default: ''
+    },
+    phone: {
+        type: String,
+        default: ''
+    },
+    gender: {
+        type: String,
+        default: ''
+    },
+    permanentAddress: {
+        type: String,
+        default: ''
+    },
     addresses: [
         {
             firstName: String,
