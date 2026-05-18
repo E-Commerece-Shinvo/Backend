@@ -49,6 +49,14 @@ export const login = async (req, res) => {
             return res.status(401).json({ message: 'Invalid email or password' });
         }
 
+        // Check if user is blocked
+        if (user.isBlocked) {
+            return res.status(403).json({ 
+                message: 'Apka account block kr dia gya hai. Meharbani kr k customer support sy rabta krein dobara login krny k lye.',
+                isBlocked: true 
+            });
+        }
+
         res.json({
             _id: user._id,
             username: user.username,

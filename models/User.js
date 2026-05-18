@@ -27,7 +27,24 @@ const userSchema = new mongoose.Schema({
         type: String,
         enum: ['user', 'admin'],
         default: 'user'
-    }
+    },
+    isBlocked: {
+        type: Boolean,
+        default: false
+    },
+    addresses: [
+        {
+            firstName: String,
+            lastName: String,
+            country: { type: String, default: 'Pakistan' },
+            state: String,
+            city: String,
+            postalCode: String,
+            address: String,
+            phone: String,
+            isDefault: { type: Boolean, default: false }
+        }
+    ]
 }, { timestamps: true });
 
 // Hash password before saving
