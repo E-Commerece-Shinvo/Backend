@@ -68,3 +68,68 @@ export const updateTicketStatus = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+// @desc    Get user's support tickets
+// @route   GET /api/support
+// @access  Private
+export const getMyTickets = async (req, res) => {
+    try {
+        const tickets = await SupportTicket.find({ user: req.user._id })
+            .sort({ createdAt: -1 });
+        res.json(tickets);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Update user's own support ticket
+// @route   PUT /api/support/:id
+// @access  Private
+export const updateTicket = async (req, res) => {
+    try {
+        const { category, subject, message } = req.body;
+        const ticket = await SupportTicket.findById(req.params.id);
+
+        if (!ticket) {
+            return res.status(404).json({ message: 'Ticket not found' });
+        }
+
+        // Check if ticket belongs to the user
+        if (ticket.user.toString() !== req.user._id.toString()) {
+            return res.status(401).json({ message: 'Not authorized' });
+        }
+
+        ticket.category = category || ticket.category;
+        ticket.subject = subject || ticket.subject;
+        ticket.message = message || ticket.message;
+
+        await ticket.save();
+        res.json(ticket);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Delete user's own support ticket
+// @route   DELETE /api/support/:id
+// @access  Private
+export const deleteTicket = async (req, res) => {
+    try {
+        const ticket = await SupportTicket.findById(req.params.id);
+
+        if (!ticket) {
+            return res.status(404).json({ message: 'Ticket not found' });
+        }
+
+        // Check if ticket belongs to the user
+        if (ticket.user.toString() !== req.user._id.toString()) {
+            return res.status(401).json({ message: 'Not authorized' });
+        }
+
+        await ticket.deleteOne();
+        res.json({ message: 'Complaint removed successfully' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
