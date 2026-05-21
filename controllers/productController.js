@@ -8,9 +8,14 @@ export const getProducts = async (req, res) => {
 
         let query = {};
 
-        // Search by title/brand/description
+        // Search by title/brand/description (flexible regex for partial matches)
         if (search) {
-            query.$text = { $search: search };
+            const searchRegex = new RegExp(search, 'i');
+            query.$or = [
+                { title: searchRegex },
+                { brand: searchRegex },
+                { description: searchRegex }
+            ];
         }
 
         // Filter by category
