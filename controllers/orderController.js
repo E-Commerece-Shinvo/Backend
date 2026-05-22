@@ -80,6 +80,79 @@ export const getOrderById = async (req, res) => {
     }
 };
 
+// @desc    Cancel order (user)
+// @route   PUT /api/orders/:id/cancel
+export const cancelOrder = async (req, res) => {
+    try {
+        const order = await Order.findById(req.params.id);
+
+        if (!order) {
+            return res.status(404).json({ message: 'Order not found' });
+        }
+
+        // Only allow the order owner to cancel
+        if (order.user._id.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ message: 'Not authorized to cancel this order' });
+        }
+
+        if (order.status !== 'pending') {
+            return res.status(400).json({ message: 'Only pending orders can be cancelled' });
+        }
+
+        // Restore stock
+        for (const item of order.items) {
+            await Product.findByIdAndUpdate(item.product, {
+                $inc: { stock: item.quantity }
+            });
+        }
+
+        order.status = 'cancelled';
+        order.history.push({
+            status: 'cancelled',
+            message: 'Order has been cancelled by the customer.'
+        });
+
+        await order.save();
+
+        res.json(order);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Update order shipping address (user)
+// @route   PUT /api/orders/:id/address
+export const updateOrderAddress = async (req, res) => {
+    try {
+        const order = await Order.findById(req.params.id);
+
+        if (!order) {
+            return res.status(404).json({ message: 'Order not found' });
+        }
+
+        // Only allow the order owner to update
+        if (order.user._id.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ message: 'Not authorized to update this order' });
+        }
+
+        if (order.status !== 'pending') {
+            return res.status(400).json({ message: 'Address can only be changed before the order is processed' });
+        }
+
+        const { shippingAddress } = req.body;
+        if (!shippingAddress || !shippingAddress.fullName || !shippingAddress.address || !shippingAddress.city || !shippingAddress.phone || !shippingAddress.postalCode) {
+            return res.status(400).json({ message: 'Please provide all required address fields' });
+        }
+
+        order.shippingAddress = shippingAddress;
+        await order.save();
+
+        res.json(order);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 // @desc    Get all orders (admin)
 // @route   GET /api/orders
 export const getAllOrders = async (req, res) => {
