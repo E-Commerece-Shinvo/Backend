@@ -43,6 +43,11 @@ const orderSchema = new mongoose.Schema({
         enum: ['cod', 'card', 'bank_transfer'],
         default: 'cod'
     },
+    refundStatus: {
+        type: String,
+        enum: ['none', 'requested', 'completed'],
+        default: 'none'
+    },
     history: [{
         status: { type: String, required: true },
         message: { type: String },
