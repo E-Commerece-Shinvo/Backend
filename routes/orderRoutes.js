@@ -7,7 +7,9 @@ import {
     updateOrderStatus,
     getAdminStats,
     getRecentActivity,
-    getOrdersByUserId
+    getOrdersByUserId,
+    cancelOrder,
+    updateOrderAddress
 } from '../controllers/orderController.js';
 import { protect, admin } from '../middleware/auth.js';
 
@@ -17,6 +19,8 @@ const router = express.Router();
 router.post('/', protect, createOrder);
 router.get('/my-orders', protect, getMyOrders);
 router.get('/:id', protect, getOrderById);
+router.put('/:id/cancel', protect, cancelOrder);
+router.put('/:id/address', protect, updateOrderAddress);
 
 // Admin routes
 router.get('/admin/stats', protect, admin, getAdminStats);
