@@ -309,3 +309,66 @@ export const getOrdersByUserId = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+// @desc    Request a refund (user)
+// @route   PUT /api/orders/:id/refund
+export const requestRefund = async (req, res) => {
+    try {
+        const order = await Order.findById(req.params.id);
+
+        if (!order) {
+            return res.status(404).json({ message: 'Order not found' });
+        }
+
+        // Must be the owner
+        if (order.user.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ message: 'Not authorized to modify this order' });
+        }
+
+        if (order.status !== 'cancelled') {
+            return res.status(400).json({ message: 'Order must be cancelled before requesting a refund' });
+        }
+
+        if (order.refundStatus !== 'none') {
+            return res.status(400).json({ message: 'Refund already requested or completed' });
+        }
+
+        order.refundStatus = 'requested';
+        order.history.push({
+            status: 'Refund Requested',
+            message: 'User requested a refund for this cancelled order.'
+        });
+
+        const updatedOrder = await order.save();
+        res.json(updatedOrder);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Process a refund (admin)
+// @route   PUT /api/orders/:id/process-refund
+export const processRefund = async (req, res) => {
+    try {
+        const order = await Order.findById(req.params.id).populate('user', 'name email');
+
+        if (!order) {
+            return res.status(404).json({ message: 'Order not found' });
+        }
+
+        if (order.refundStatus !== 'requested') {
+            return res.status(400).json({ message: 'Refund not requested or already completed' });
+        }
+
+        order.refundStatus = 'completed';
+        order.history.push({
+            status: 'Refund Processed',
+            message: 'Admin has processed and completed the refund.'
+        });
+
+        const updatedOrder = await order.save();
+        res.json(updatedOrder);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
